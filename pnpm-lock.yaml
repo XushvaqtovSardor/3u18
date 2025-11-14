@@ -48,6 +48,9 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      knex:
+        specifier: ^3.1.0
+        version: 3.1.0(pg@8.16.3)
       lint-staged:
         specifier: ^16.2.6
         version: 16.2.6
@@ -2138,6 +2141,8 @@ snapshots:
   is-number@7.0.0: {}
 
   is-obj@2.0.0: {}
+
+  is-promise@4.0.0: {}
 
   is-text-path@2.0.0:
     dependencies:
