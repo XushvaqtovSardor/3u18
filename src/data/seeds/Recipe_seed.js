@@ -1,34 +1,46 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from 'crypto';
 
 export async function seed(knex) {
-  await knex("recipe").del();
+  await knex('recipe').del();
 
-  await knex("recipe").insert([
+  const users = await knex('users').select('id').limit(2);
+
+  await knex('recipe').insert([
     {
-      id: uuidv4(),
-      title: "Pancakes",
-      description: "Soft breakfast pancakes",
-      category: "Breakfast",
-      cookingTime: 15,
-      difficulty: "easy",
-      instructions: "Mix ingredients and cook on pan.",
-      imageUrl: null,
-      authorId: null,
-      createdAt: knex.fn.now(),
-      updatedAt: knex.fn.now(),
+      id: randomUUID(),
+      title: 'Classic Pancakes',
+      description: 'Fluffy and delicious pancakes perfect for breakfast',
+      category: 'Breakfast',
+      cookingTime: 20,
+      difficulty: 'easy',
+      instructions:
+        '1. Mix flour, sugar, and salt. 2. Add eggs and milk. 3. Cook on a hot griddle.',
+      imageUrl: 'https://example.com/pancakes.jpg',
+      authorId: users[0]?.id,
     },
     {
-      id: uuidv4(),
-      title: "Spaghetti",
-      description: "Italian pasta with sauce",
-      category: "Dinner",
+      id: randomUUID(),
+      title: 'Chicken Alfredo Pasta',
+      description: 'Creamy pasta with tender chicken',
+      category: 'Main Course',
+      cookingTime: 30,
+      difficulty: 'medium',
+      instructions:
+        '1. Cook pasta. 2. Prepare chicken. 3. Make Alfredo sauce. 4. Combine all.',
+      imageUrl: 'https://example.com/alfredo.jpg',
+      authorId: users[1]?.id,
+    },
+    {
+      id: randomUUID(),
+      title: 'Vegetable Fried Rice',
+      description: 'Healthy and tasty fried rice',
+      category: 'Main Course',
       cookingTime: 25,
-      difficulty: "medium",
-      instructions: "Boil pasta and prepare sauce.",
-      imageUrl: null,
-      authorId: null,
-      createdAt: knex.fn.now(),
-      updatedAt: knex.fn.now(),
+      difficulty: 'easy',
+      instructions:
+        '1. Cook rice. 2. Stir-fry vegetables. 3. Mix with rice and season.',
+      imageUrl: 'https://example.com/friedrice.jpg',
+      authorId: users[0]?.id,
     },
   ]);
 }

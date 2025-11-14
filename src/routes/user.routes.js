@@ -1,15 +1,16 @@
 import express from 'express';
-import { UserController } from '../controller/user.controller.js';
+import {register,login,getAllUsers,getUserById,updateUser,deleteUser,} from '../controller/user.controller.js';
+import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validation.middleware.js';
+import {registerSchema,loginSchema,updateUserSchema,} from '../validators/user.validator.js';
 
 const router = express.Router();
 
-router.post('/register', UserController.register);
-router.post('/login', UserController.login);
-router.get('/refresh-token', UserController.refreshToken);
-router.post('/logout', UserController.logout);
+router.post('/register', validate(registerSchema), register);
+router.post('/login', validate(loginSchema), login);
+router.get('/', authenticate, authorize('admin'), getAllUsers);
+router.get('/:id', authenticate, getUserById);
+router.put('/:id', authenticate, validate(updateUserSchema), updateUser);
+router.delete('/:id', authenticate, authorize('admin'), deleteUser);
 
-router.route('/:id')
-  .put(UserController.update)
-  .delete(UserController.delete);
-
-export { router as userRouter };
+export default router;

@@ -1,32 +1,37 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from 'crypto';
 
 export async function seed(knex) {
-  await knex("review").del();
+  await knex('review').del();
 
-  const recipes = await knex("recipe").select("id");
-  const users = await knex("users").select("id");
+  const recipes = await knex('recipe').select('id');
+  const users = await knex('users').where({ role: 'user' }).select('id');
 
-  await knex("review").insert([
+  if (recipes.length === 0 || users.length === 0) return;
+
+  await knex('review').insert([
     {
-      id: uuidv4(),
-      recipeId: recipes[0].id,
-      userId: users[1].id,
+      id: randomUUID(),
+      recipeId: recipes[0]?.id,
+      userId: users[0]?.id,
       rating: 5,
-      comment: "Very tasty!",
-      status: "approved",
-      createdAt: knex.fn.now(),
-      updatedAt: knex.fn.now(),
+      comment: 'Absolutely delicious! My family loved it.',
+      status: 'approved',
     },
     {
-      id: uuidv4(),
-      recipeId: recipes[1].id,
-      userId: users[2].id,
+      id: randomUUID(),
+      recipeId: recipes[1]?.id,
+      userId: users[0]?.id,
       rating: 4,
-      comment: "Nice recipe!",
-      status: "approved",
-      createdAt: knex.fn.now(),
-      updatedAt: knex.fn.now(),
+      comment: 'Very good, but could use more seasoning.',
+      status: 'approved',
+    },
+    {
+      id: randomUUID(),
+      recipeId: recipes[0]?.id,
+      userId: users[1]?.id,
+      rating: 5,
+      comment: 'Perfect recipe! Easy to follow.',
+      status: 'pending',
     },
   ]);
 }
-
