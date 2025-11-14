@@ -1,7 +1,9 @@
 import express from "express";
-const app=express()
+const Mainrouter=express.Router()
 
-app.use("/users",)
+Mainrouter.use("/users",)
+export default Mainrouter
+
 
 
 
