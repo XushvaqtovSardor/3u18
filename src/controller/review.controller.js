@@ -16,12 +16,7 @@ export const reviewController = {
       if (!recipe) {
         throw new NotFoundError('Recipe not found');
       }
-      const existingReview = await db('review')
-        .where({ recipeId, userId })
-        .first();
-      if (existingReview) {
-        throw new ValidationError('You already reviewed this recipe');
-      }
+
       const reviewId = randomUUID();
       await db('review').insert({
         id: reviewId,
@@ -109,6 +104,37 @@ export const reviewController = {
       next(error);
     }
   },
+  updateData:  async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const review = await db('review').where({ id }).first();
+    if (!review) {
+      throw new NotFoundError('Review not found');
+    }
+
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'Nothing to update' });
+    }
+
+    await db('review')
+      .where({ id })
+      .update({ ...updates, updatedAt: db.fn.now() });
+
+    const updatedReview = await db('review').where({ id }).first();
+
+    logger.info(`Review updated: ${id}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Review updated successfully',
+      review: updatedReview,
+    });
+  } catch (error) {
+    next(error);
+  }
+},
 
   deleteReview: async (req, res, next) => {
     try {

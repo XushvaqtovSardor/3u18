@@ -15,6 +15,7 @@ const {
   getReviewById,
   updateReviewStatus,
   deleteReview,
+  updateData
 } = reviewController;
 
 router.post('/', authGuard, validate(createReviewSchema), createReview);
@@ -27,6 +28,7 @@ router.put(
   validate(updateReviewSchema),
   updateReviewStatus
 );
+router.put('/:id',authGuard,updateData)
 router.delete('/:id', authGuard, deleteReview);
 
 export default router;

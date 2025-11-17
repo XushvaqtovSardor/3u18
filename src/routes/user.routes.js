@@ -24,7 +24,7 @@ const {
 } = userController;
 
 router.post('/register', validate(registerSchema), register);
-router.post('/verify-otp', verifyOTP);
+router.post('/verifyOTP', verifyOTP);
 router.post('/login', validate(loginSchema), login);
 router.post('/refresh', refreshToken);
 router.get('/me', authGuard, getMe);

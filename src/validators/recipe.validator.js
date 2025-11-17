@@ -28,4 +28,11 @@ export const updateRecipeSchema = Joi.object({
   difficulty: Joi.string().valid('easy', 'medium', 'hard'),
   instructions: Joi.string(),
   imageUrl: Joi.string().uri().allow(''),
-});
+  ingredients: Joi.array().items(
+    Joi.object({
+      ingredientId: Joi.string().uuid().required(),
+      quantity: Joi.number().positive().required(),
+      unit: Joi.string().required(),
+    })
+  ),
+}).min(1);

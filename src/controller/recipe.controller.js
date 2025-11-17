@@ -122,7 +122,7 @@ export const recipeController = {
   updateRecipe: async (req, res, next) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const { ingredients, ...recipeUpdates } = req.body;
       const recipe = await db('recipe').where({ id }).first();
       if (!recipe) {
         throw new NotFoundError('Recipe not found');
@@ -130,15 +130,42 @@ export const recipeController = {
       if (recipe.authorId !== req.user.userId && req.user.role !== 'admin') {
         throw new ForbiddenError('Access denied');
       }
-      await db('recipe')
-        .where({ id })
-        .update({ ...updates, updatedAt: db.fn.now() });
+      if (Object.keys(recipeUpdates).length > 0) {
+        await db('recipe')
+          .where({ id })
+          .update({ ...recipeUpdates, updatedAt: db.fn.now() });
+      }
+      if (ingredients && Array.isArray(ingredients)) {
+        await db('recipeIngredient').where({ recipeId: id }).delete();
+        for (const i of ingredients) {
+          await db('recipeIngredient').insert({
+            id: randomUUID(),
+            recipeId: id,
+            ingredientId: i.ingredientId,
+            quantity: i.quantity,
+            unit: i.unit,
+          });
+        }
+      }
       const updatedRecipe = await db('recipe').where({ id }).first();
+      const updatedIngredients = await db('recipeIngredient')
+        .join('ingredient', 'recipeIngredient.ingredientId', 'ingredient.id')
+        .select(
+          'recipeIngredient.id as recipeIngredientId',
+          'ingredient.id',
+          'ingredient.name',
+          'recipeIngredient.quantity',
+          'recipeIngredient.unit'
+        )
+        .where('recipeIngredient.recipeId', id);
       logger.info(`Recipe updated: ${recipe.title}`);
       res.status(200).json({
         success: true,
         message: 'Recipe updated successfully',
-        recipe: updatedRecipe,
+        recipe: {
+          ...updatedRecipe,
+          ingredients: updatedIngredients,
+        },
       });
     } catch (error) {
       next(error);

@@ -1,18 +1,39 @@
 import nodemailer from 'nodemailer';
 import logger from './logger.js';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+let transporter = null;
+
+const getTransporter = () => {
+  if (transporter) {
+    return transporter;
+  }
+
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (!emailUser || !emailPass) {
+    logger.error('Email credentials not found in environment variables');
+    logger.error(`EMAIL_USER: ${emailUser ? 'exists' : 'missing'}`);
+    logger.error(`EMAIL_PASS: ${emailPass ? 'exists' : 'missing'}`);
+    throw new Error('Email configuration is missing');
+  }
+
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: emailUser,
+      pass: emailPass,
+    },
+  });
+
+  return transporter;
+};
 
 export const sendOTPEmail = async (email, otp) => {
   try {
+    const mailer = getTransporter();
     const mailOptions = {
-      from: process.env.EMAIL_FROM,
+      from: process.env.EMAIL_USER,
       to: email,
       subject: 'Your OTP Code - Recipe App',
       html: `
@@ -26,13 +47,16 @@ export const sendOTPEmail = async (email, otp) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    logger.info(`OTP email sent to ${email}`);
+    const info = await mailer.sendMail(mailOptions);
+    logger.info(
+      `OTP email sent successfully to ${email}, MessageID: ${info.messageId}`
+    );
     return true;
   } catch (error) {
-    logger.error(`Failed to send OTP email: ${error.message}`);
+    logger.error(`Failed to send OTP email to ${email}: ${error.message}`);
+    logger.error(`Email error details: ${JSON.stringify(error)}`);
     throw new Error('Failed to send OTP email');
   }
 };
 
-export default transporter;
+export default getTransporter;

@@ -10,7 +10,7 @@ const router = express.Router();
 router.use('/users', userRoutes);
 router.use('/ingredients', ingredientRoutes);
 router.use('/recipes', recipeRoutes);
-router.use('/recipe-ingredients', recipeIngredientRoutes);
+router.use('/recipeIngredients', recipeIngredientRoutes);
 router.use('/reviews', reviewRoutes);
 
 export default router;

@@ -38,14 +38,25 @@ export const userController = {
         expiresAt,
         verified: false,
       });
-      await sendOTPEmail(email, otp);
-      logger.info(`User registered, OTP sent to ${email}`);
-      res.status(201).json({
-        success: true,
-        message:
-          'Registration successful. Please verify your email with OTP sent to your inbox',
-        email,
-      });
+      try {
+        await sendOTPEmail(email, otp);
+        logger.info(`User registered, OTP sent to ${email}`);
+        res.status(201).json({
+          success: true,
+          message:
+            'verify your email with OTP',
+          email,
+        });
+      } catch (emailError) {
+        logger.error(`Email sending failed: ${emailError.message}`);
+        res.status(201).json({
+          success: true,
+          message:
+            'Error with sending email',
+          email,
+          otp,
+        });
+      }
     } catch (error) {
       next(error);
     }
@@ -69,7 +80,7 @@ export const userController = {
       logger.info(`Email verified: ${email}`);
       res.status(200).json({
         success: true,
-        message: 'Email verified successfully. You can now login',
+        message: 'Email verified successfully',
       });
     } catch (error) {
       next(error);
@@ -93,7 +104,7 @@ export const userController = {
       const accessToken = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: '59m' }
       );
       const refreshToken = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
@@ -112,6 +123,7 @@ export const userController = {
         success: true,
         message: 'Login successful',
         accessToken,
+        refreshToken,
         user: userWithoutPassword,
       });
     } catch (error) {
@@ -279,9 +291,10 @@ export const userController = {
       if (!user) {
         throw new NotFoundError('User not found');
       }
+      await db('otp').where({ email: user.email }).delete();
       await db('users').where({ id }).delete();
       logger.info(`User deleted: ${user.email}`);
-      res.status(200).json({
+      res.status(200).json({  
         success: true,
         message: 'User deleted successfully',
       });
