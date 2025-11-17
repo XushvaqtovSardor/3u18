@@ -1,128 +1,133 @@
 import db from '../config/database.js';
 import { randomUUID } from 'crypto';
+import {
+  NotFoundError,
+  ValidationError,
+  ForbiddenError,
+} from '../utils/errors.js';
+import logger from '../config/logger.js';
 
-export const createReview = async (req, res) => {
-  try {
-    const { recipeId, rating, comment } = req.body;
-    const userId = req.user.userId;
-
-    const recipe = await db('recipe').where({ id: recipeId }).first();
-    if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+export const reviewController = {
+  createReview: async (req, res, next) => {
+    try {
+      const { recipeId, rating, comment } = req.body;
+      const userId = req.user.userId;
+      const recipe = await db('recipe').where({ id: recipeId }).first();
+      if (!recipe) {
+        throw new NotFoundError('Recipe not found');
+      }
+      const existingReview = await db('review')
+        .where({ recipeId, userId })
+        .first();
+      if (existingReview) {
+        throw new ValidationError('You already reviewed this recipe');
+      }
+      const reviewId = randomUUID();
+      await db('review').insert({
+        id: reviewId,
+        recipeId,
+        userId,
+        rating,
+        comment,
+        status: 'pending',
+      });
+      const review = await db('review').where({ id: reviewId }).first();
+      logger.info(`Review created for recipe: ${recipeId}`);
+      res.status(201).json({
+        success: true,
+        message: 'Review created successfully',
+        review,
+      });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    const existingReview = await db('review')
-      .where({ recipeId, userId })
-      .first();
-    if (existingReview) {
-      return res
-        .status(400)
-        .json({ message: 'You already reviewed this recipe' });
+  getAllReviews: async (req, res, next) => {
+    try {
+      const { status, recipeId } = req.query;
+      let query = db('review')
+        .join('users', 'review.userId', 'users.id')
+        .join('recipe', 'review.recipeId', 'recipe.id')
+        .select('review.*', 'users.username', 'recipe.title as recipeTitle');
+      if (status) {
+        query = query.where('review.status', status);
+      }
+      if (recipeId) {
+        query = query.where('review.recipeId', recipeId);
+      }
+      const reviews = await query;
+      res.status(200).json({
+        success: true,
+        reviews,
+      });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    const reviewId = randomUUID();
-    await db('review').insert({
-      id: reviewId,
-      recipeId,
-      userId,
-      rating,
-      comment,
-      status: 'pending',
-    });
-
-    const review = await db('review').where({ id: reviewId }).first();
-
-    res.status(201).json({ message: 'Review created successfully', review });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const getAllReviews = async (req, res) => {
-  try {
-    const { status, recipeId } = req.query;
-
-    let query = db('review')
-      .join('users', 'review.userId', 'users.id')
-      .join('recipe', 'review.recipeId', 'recipe.id')
-      .select('review.*', 'users.username', 'recipe.title as recipeTitle');
-
-    if (status) {
-      query = query.where('review.status', status);
+  getReviewById: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const review = await db('review')
+        .join('users', 'review.userId', 'users.id')
+        .join('recipe', 'review.recipeId', 'recipe.id')
+        .select('review.*', 'users.username', 'recipe.title as recipeTitle')
+        .where('review.id', id)
+        .first();
+      if (!review) {
+        throw new NotFoundError('Review not found');
+      }
+      res.status(200).json({
+        success: true,
+        review,
+      });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    if (recipeId) {
-      query = query.where('review.recipeId', recipeId);
+  updateReviewStatus: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const review = await db('review').where({ id }).first();
+      if (!review) {
+        throw new NotFoundError('Review not found');
+      }
+      await db('review')
+        .where({ id })
+        .update({ status, updatedAt: db.fn.now() });
+      const updatedReview = await db('review').where({ id }).first();
+      logger.info(`Review status updated: ${id}`);
+      res.status(200).json({
+        success: true,
+        message: 'Review status updated',
+        review: updatedReview,
+      });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    const reviews = await query;
-
-    res.status(200).json({ reviews });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const getReviewById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const review = await db('review')
-      .join('users', 'review.userId', 'users.id')
-      .join('recipe', 'review.recipeId', 'recipe.id')
-      .select('review.*', 'users.username', 'recipe.title as recipeTitle')
-      .where('review.id', id)
-      .first();
-
-    if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
+  deleteReview: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const review = await db('review').where({ id }).first();
+      if (!review) {
+        throw new NotFoundError('Review not found');
+      }
+      if (review.userId !== req.user.userId && req.user.role !== 'admin') {
+        throw new ForbiddenError('Access denied');
+      }
+      await db('review').where({ id }).delete();
+      logger.info(`Review deleted: ${id}`);
+      res.status(200).json({
+        success: true,
+        message: 'Review deleted successfully',
+      });
+    } catch (error) {
+      next(error);
     }
-
-    res.status(200).json({ review });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const updateReviewStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const review = await db('review').where({ id }).first();
-    if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
-    }
-
-    await db('review').where({ id }).update({ status, updatedAt: db.fn.now() });
-
-    const updatedReview = await db('review').where({ id }).first();
-
-    res
-      .status(200)
-      .json({ message: 'Review status updated', review: updatedReview });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const deleteReview = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const review = await db('review').where({ id }).first();
-    if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
-    }
-
-    if (review.userId !== req.user.userId && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    await db('review').where({ id }).delete();
-
-    res.status(200).json({ message: 'Review deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  },
 };

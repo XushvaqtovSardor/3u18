@@ -1,100 +1,102 @@
 import db from '../config/database.js';
 import { randomUUID } from 'crypto';
+import { ValidationError, NotFoundError } from '../utils/errors.js';
+import logger from '../config/logger.js';
 
-export const createIngredient = async (req, res) => {
-  try {
-    const { name, unit } = req.body;
-
-    const existingIngredient = await db('ingredient').where({ name }).first();
-    if (existingIngredient) {
-      return res.status(400).json({ message: 'Ingredient already exists' });
+export const ingredientController = {
+  createIngredient: async (req, res, next) => {
+    try {
+      const { name, unit } = req.body;
+      const existingIngredient = await db('ingredient').where({ name }).first();
+      if (existingIngredient) {
+        throw new ValidationError('Ingredient already exists');
+      }
+      const ingredientId = randomUUID();
+      await db('ingredient').insert({
+        id: ingredientId,
+        name,
+        unit,
+      });
+      const ingredient = await db('ingredient')
+        .where({ id: ingredientId })
+        .first();
+      logger.info(`Ingredient created: ${name}`);
+      res.status(201).json({
+        success: true,
+        message: 'Ingredient created successfully',
+        ingredient,
+      });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    const ingredientId = randomUUID();
-    await db('ingredient').insert({
-      id: ingredientId,
-      name,
-      unit,
-    });
-
-    const ingredient = await db('ingredient')
-      .where({ id: ingredientId })
-      .first();
-
-    res
-      .status(201)
-      .json({ message: 'Ingredient created successfully', ingredient });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const getAllIngredients = async (req, res) => {
-  try {
-    const ingredients = await db('ingredient').select('*');
-
-    res.status(200).json({ ingredients });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const getIngredientById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const ingredient = await db('ingredient').where({ id }).first();
-
-    if (!ingredient) {
-      return res.status(404).json({ message: 'Ingredient not found' });
+  getAllIngredients: async (req, res, next) => {
+    try {
+      const ingredients = await db('ingredient').select('*');
+      res.status(200).json({
+        success: true,
+        ingredients,
+      });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    res.status(200).json({ ingredient });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const updateIngredient = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-
-    const ingredient = await db('ingredient').where({ id }).first();
-    if (!ingredient) {
-      return res.status(404).json({ message: 'Ingredient not found' });
+  getIngredientById: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const ingredient = await db('ingredient').where({ id }).first();
+      if (!ingredient) {
+        throw new NotFoundError('Ingredient not found');
+      }
+      res.status(200).json({
+        success: true,
+        ingredient,
+      });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    await db('ingredient')
-      .where({ id })
-      .update({ ...updates, updatedAt: db.fn.now() });
-
-    const updatedIngredient = await db('ingredient').where({ id }).first();
-
-    res
-      .status(200)
-      .json({
+  updateIngredient: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const ingredient = await db('ingredient').where({ id }).first();
+      if (!ingredient) {
+        throw new NotFoundError('Ingredient not found');
+      }
+      await db('ingredient')
+        .where({ id })
+        .update({ ...updates, updatedAt: db.fn.now() });
+      const updatedIngredient = await db('ingredient').where({ id }).first();
+      logger.info(`Ingredient updated: ${ingredient.name}`);
+      res.status(200).json({
+        success: true,
         message: 'Ingredient updated successfully',
         ingredient: updatedIngredient,
       });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const deleteIngredient = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const ingredient = await db('ingredient').where({ id }).first();
-    if (!ingredient) {
-      return res.status(404).json({ message: 'Ingredient not found' });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    await db('ingredient').where({ id }).delete();
-
-    res.status(200).json({ message: 'Ingredient deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  deleteIngredient: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const ingredient = await db('ingredient').where({ id }).first();
+      if (!ingredient) {
+        throw new NotFoundError('Ingredient not found');
+      }
+      await db('ingredient').where({ id }).delete();
+      logger.info(`Ingredient deleted: ${ingredient.name}`);
+      res.status(200).json({
+        success: true,
+        message: 'Ingredient deleted successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

@@ -1,0 +1,13 @@
+{"level":"info","message":"Server is running on http://localhost:3000","timestamp":"2025-11-16T14:22:38.593Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-16T14:23:51.273Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-17T07:01:28.303Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-17T07:02:11.019Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-17T07:02:15.005Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-17T11:19:43.859Z"}
+{"level":"info","message":"Server is running on http://localhost:3000","timestamp":"2025-11-17T11:21:38.576Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-17T11:25:45.042Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-17T11:33:06.299Z"}
+{"level":"info","message":"Server is running on http://localhost:3002","timestamp":"2025-11-17T11:33:53.585Z"}
+{"level":"error","message":"Email already registered","method":"POST","stack":"Error: Email already registered\n    at register (file:///D:/N25_2/imtihon3/src/controller/user.controller.js:19:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-11-17T11:34:54.147Z","url":"/users/register"}
+{"level":"error","message":"Email already registered","method":"POST","stack":"Error: Email already registered\n    at register (file:///D:/N25_2/imtihon3/src/controller/user.controller.js:19:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-11-17T11:35:01.685Z","url":"/users/register"}
+{"level":"error","message":"Email already registered","method":"POST","stack":"Error: Email already registered\n    at register (file:///D:/N25_2/imtihon3/src/controller/user.controller.js:19:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-11-17T11:35:04.651Z","url":"/users/register"}

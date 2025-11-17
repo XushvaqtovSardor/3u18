@@ -16,13 +16,16 @@
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "dependencies": {
-    "express": "^4.18.2",
-    "knex": "^3.0.1",
-    "pg": "^8.11.3",
-    "dotenv": "^16.3.1",
     "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
-    "joi": "^17.11.0"
+    "knex": "^3.0.1",
+    "nodemailer": "^6.10.1",
+    "pg": "^8.11.3",
+    "winston": "^3.18.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
@@ -31,15 +34,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "husky": "^9.1.7",
-    "knex": "^3.1.0",
     "lint-staged": "^16.2.6",
     "prettier": "^3.6.2"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3",
-    "uuid": "^13.0.0"
   }
 }

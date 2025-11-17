@@ -1,12 +1,6 @@
 import express from 'express';
-import {
-  createRecipe,
-  getAllRecipes,
-  getRecipeById,
-  updateRecipe,
-  deleteRecipe,
-} from '../controller/recipe.controller.js';
-import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { recipeController } from '../controller/recipe.controller.js';
+import { authGuard } from '../middlewares/guards.js';
 import { validate } from '../middlewares/validation.middleware.js';
 import {
   createRecipeSchema,
@@ -15,10 +9,18 @@ import {
 
 const router = express.Router();
 
-router.post('/', authenticate, validate(createRecipeSchema), createRecipe);
+const {
+  createRecipe,
+  getAllRecipes,
+  getRecipeById,
+  updateRecipe,
+  deleteRecipe,
+} = recipeController;
+
+router.post('/', authGuard, validate(createRecipeSchema), createRecipe);
 router.get('/', getAllRecipes);
 router.get('/:id', getRecipeById);
-router.put('/:id', authenticate, validate(updateRecipeSchema), updateRecipe);
-router.delete('/:id', authenticate, deleteRecipe);
+router.put('/:id', authGuard, validate(updateRecipeSchema), updateRecipe);
+router.delete('/:id', authGuard, deleteRecipe);
 
 export default router;

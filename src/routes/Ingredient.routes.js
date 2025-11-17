@@ -1,12 +1,6 @@
 import express from 'express';
-import {
-  createIngredient,
-  getAllIngredients,
-  getIngredientById,
-  updateIngredient,
-  deleteIngredient,
-} from '../controller/ingredient.controller.js';
-import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { ingredientController } from '../controller/ingredient.controller.js';
+import { authGuard, roleGuard } from '../middlewares/guards.js';
 import { validate } from '../middlewares/validation.middleware.js';
 import {
   createIngredientSchema,
@@ -15,10 +9,18 @@ import {
 
 const router = express.Router();
 
+const {
+  createIngredient,
+  getAllIngredients,
+  getIngredientById,
+  updateIngredient,
+  deleteIngredient,
+} = ingredientController;
+
 router.post(
   '/',
-  authenticate,
-  authorize('admin'),
+  authGuard,
+  roleGuard('admin'),
   validate(createIngredientSchema),
   createIngredient
 );
@@ -26,11 +28,11 @@ router.get('/', getAllIngredients);
 router.get('/:id', getIngredientById);
 router.put(
   '/:id',
-  authenticate,
-  authorize('admin'),
+  authGuard,
+  roleGuard('admin'),
   validate(updateIngredientSchema),
   updateIngredient
 );
-router.delete('/:id', authenticate, authorize('admin'), deleteIngredient);
+router.delete('/:id', authGuard, roleGuard('admin'), deleteIngredient);
 
 export default router;

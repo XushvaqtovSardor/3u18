@@ -1,17 +1,19 @@
 import express from 'express';
-import {
+import { recipeIngredientController } from '../controller/recipeIngredients.controller.js';
+import { authGuard } from '../middlewares/guards.js';
+
+const router = express.Router();
+
+const {
   addIngredientToRecipe,
   getRecipeIngredients,
   updateRecipeIngredient,
   deleteRecipeIngredient,
-} from '../controller/recipeIngredients.controller.js';
-import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+} = recipeIngredientController;
 
-const router = express.Router();
-
-router.post('/', authenticate, addIngredientToRecipe);
+router.post('/', authGuard, addIngredientToRecipe);
 router.get('/:recipeId', getRecipeIngredients);
-router.put('/:id', authenticate, updateRecipeIngredient);
-router.delete('/:id', authenticate, deleteRecipeIngredient);
+router.put('/:id', authGuard, updateRecipeIngredient);
+router.delete('/:id', authGuard, deleteRecipeIngredient);
 
 export default router;

@@ -1,12 +1,6 @@
 import express from 'express';
-import {
-  createReview,
-  getAllReviews,
-  getReviewById,
-  updateReviewStatus,
-  deleteReview,
-} from '../controller/review.controller.js';
-import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { reviewController } from '../controller/Review.controller.js';
+import { authGuard, roleGuard } from '../middlewares/guards.js';
 import { validate } from '../middlewares/validation.middleware.js';
 import {
   createReviewSchema,
@@ -15,16 +9,24 @@ import {
 
 const router = express.Router();
 
-router.post('/', authenticate, validate(createReviewSchema), createReview);
+const {
+  createReview,
+  getAllReviews,
+  getReviewById,
+  updateReviewStatus,
+  deleteReview,
+} = reviewController;
+
+router.post('/', authGuard, validate(createReviewSchema), createReview);
 router.get('/', getAllReviews);
 router.get('/:id', getReviewById);
 router.put(
   '/:id/status',
-  authenticate,
-  authorize('admin'),
+  authGuard,
+  roleGuard('admin'),
   validate(updateReviewSchema),
   updateReviewStatus
 );
-router.delete('/:id', authenticate, deleteReview);
+router.delete('/:id', authGuard, deleteReview);
 
 export default router;
