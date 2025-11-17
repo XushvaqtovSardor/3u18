@@ -12,7 +12,7 @@ const {
 } = recipeIngredientController;
 
 router.post('/', authGuard, addIngredientToRecipe);
-router.get('/:id', getRecipeIngredients);
+router.get('/recipe/:recipeId', getRecipeIngredients);
 router.put('/:id', authGuard, updateRecipeIngredient);
 router.delete('/:id', authGuard, deleteRecipeIngredient);
 
