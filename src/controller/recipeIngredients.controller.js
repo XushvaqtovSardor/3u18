@@ -1,6 +1,6 @@
 import db from '../config/database.js';
 import { randomUUID } from 'crypto';
-import { NotFoundError } from '../utils/errors.js';
+import { ApiError } from '../utils/errors.js';
 import logger from '../config/logger.js';
 
 export const recipeIngredientController = {
@@ -9,13 +9,13 @@ export const recipeIngredientController = {
       const { recipeId, ingredientId, quantity, unit } = req.body;
       const recipe = await db('recipe').where({ id: recipeId }).first();
       if (!recipe) {
-        throw new NotFoundError('Recipe not found');
+        throw new ApiError('Recipe not found', 404);
       }
       const ingredient = await db('ingredient')
         .where({ id: ingredientId })
         .first();
       if (!ingredient) {
-        throw new NotFoundError('Ingredient not found');
+        throw new ApiError('Ingredient not found', 404);
       }
       const recipeIngredientId = randomUUID();
       await db('recipeIngredient').insert({
@@ -70,7 +70,7 @@ export const recipeIngredientController = {
         .where({ id })
         .first();
       if (!recipeIngredient) {
-        throw new NotFoundError('Recipe ingredient not found');
+        throw new ApiError('Recipe ingredient not found', 404);
       }
       await db('recipeIngredient')
         .where({ id })
@@ -94,7 +94,7 @@ export const recipeIngredientController = {
         .where({ id })
         .first();
       if (!recipeIngredient) {
-        throw new NotFoundError('Recipe ingredient not found');
+        throw new ApiError('Recipe ingredient not found', 404);
       }
       await db('recipeIngredient').where({ id }).delete();
       logger.info(`Recipe ingredient deleted: ${id}`);

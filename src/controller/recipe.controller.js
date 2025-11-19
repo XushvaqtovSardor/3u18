@@ -1,10 +1,6 @@
 import db from '../config/database.js';
 import { randomUUID } from 'crypto';
-import {
-  ValidationError,
-  NotFoundError,
-  ForbiddenError,
-} from '../utils/errors.js';
+import { ApiError } from '../utils/errors.js';
 import logger from '../config/logger.js';
 
 export const recipeController = {
@@ -33,13 +29,13 @@ export const recipeController = {
         imageUrl,
         authorId,
       });
-      for (const ing of ingredients) {
+      for (const x of ingredients) {
         await db('recipeIngredient').insert({
           id: randomUUID(),
           recipeId: recipeId,
-          ingredientId: ing.ingredientId,
-          quantity: ing.quantity,
-          unit: ing.unit,
+          ingredientId: x.ingredientId,
+          quantity: x.quantity,
+          unit: x.unit,
         });
       }
       const recipe = await db('recipe').where({ id: recipeId }).first();
@@ -85,7 +81,7 @@ export const recipeController = {
         .where('recipe.id', id)
         .first();
       if (!recipe) {
-        throw new NotFoundError('Recipe not found');
+        throw new ApiError('Recipe not found', 404);
       }
       const ingredients = await db('recipeIngredient')
         .join('ingredient', 'recipeIngredient.ingredientId', 'ingredient.id')
@@ -125,10 +121,10 @@ export const recipeController = {
       const { ingredients, ...recipeUpdates } = req.body;
       const recipe = await db('recipe').where({ id }).first();
       if (!recipe) {
-        throw new NotFoundError('Recipe not found');
+        throw new ApiError('Recipe not found', 404);
       }
       if (recipe.authorId !== req.user.userId && req.user.role !== 'admin') {
-        throw new ForbiddenError('Access denied');
+        throw new ApiError('Access denied', 403);
       }
       if (Object.keys(recipeUpdates).length > 0) {
         await db('recipe')
@@ -177,10 +173,10 @@ export const recipeController = {
       const { id } = req.params;
       const recipe = await db('recipe').where({ id }).first();
       if (!recipe) {
-        throw new NotFoundError('Recipe not found');
+        throw new ApiError('Recipe not found', 404);
       }
       if (recipe.authorId !== req.user.userId && req.user.role !== 'admin') {
-        throw new ForbiddenError('Access denied');
+        throw new ApiError('Access denied', 403);
       }
       await db('recipe').where({ id }).delete();
       logger.info(`Recipe deleted: ${recipe.title}`);

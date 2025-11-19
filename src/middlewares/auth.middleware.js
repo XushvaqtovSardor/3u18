@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-export const authenticate = (req, res, next) => {
+export const auth = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -19,7 +19,7 @@ export const authenticate = (req, res, next) => {
   }
 };
 
-export const authorize = (...roles) => {
+export const roleCheker = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Access denied' });

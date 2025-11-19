@@ -1,10 +1,6 @@
 import db from '../config/database.js';
 import { randomUUID } from 'crypto';
-import {
-  NotFoundError,
-  ValidationError,
-  ForbiddenError,
-} from '../utils/errors.js';
+import { ApiError } from '../utils/errors.js';
 import logger from '../config/logger.js';
 
 export const reviewController = {
@@ -14,7 +10,7 @@ export const reviewController = {
       const userId = req.user.userId;
       const recipe = await db('recipe').where({ id: recipeId }).first();
       if (!recipe) {
-        throw new NotFoundError('Recipe not found');
+        throw new ApiError('Recipe not found', 404);
       }
 
       const reviewId = randomUUID();
@@ -71,7 +67,7 @@ export const reviewController = {
         .where('review.id', id)
         .first();
       if (!review) {
-        throw new NotFoundError('Review not found');
+        throw new ApiError('Review not found', 404);
       }
       res.status(200).json({
         success: true,
@@ -88,7 +84,7 @@ export const reviewController = {
       const { status } = req.body;
       const review = await db('review').where({ id }).first();
       if (!review) {
-        throw new NotFoundError('Review not found');
+        throw new ApiError('Review not found', 404);
       }
       await db('review')
         .where({ id })
@@ -104,47 +100,47 @@ export const reviewController = {
       next(error);
     }
   },
-  updateData:  async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
+  updateData: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
 
-    const review = await db('review').where({ id }).first();
-    if (!review) {
-      throw new NotFoundError('Review not found');
+      const review = await db('review').where({ id }).first();
+      if (!review) {
+        throw new ApiError('Review not found', 404);
+      }
+
+      if (!updates || Object.keys(updates).length === 0) {
+        throw new ApiError('Nothing to update', 400);
+      }
+
+      await db('review')
+        .where({ id })
+        .update({ ...updates, updatedAt: db.fn.now() });
+
+      const updatedReview = await db('review').where({ id }).first();
+
+      logger.info(`Review updated: ${id}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Review updated successfully',
+        review: updatedReview,
+      });
+    } catch (error) {
+      next(error);
     }
-
-    if (!updates || Object.keys(updates).length === 0) {
-      return res.status(400).json({ message: 'Nothing to update' });
-    }
-
-    await db('review')
-      .where({ id })
-      .update({ ...updates, updatedAt: db.fn.now() });
-
-    const updatedReview = await db('review').where({ id }).first();
-
-    logger.info(`Review updated: ${id}`);
-
-    res.status(200).json({
-      success: true,
-      message: 'Review updated successfully',
-      review: updatedReview,
-    });
-  } catch (error) {
-    next(error);
-  }
-},
+  },
 
   deleteReview: async (req, res, next) => {
     try {
       const { id } = req.params;
       const review = await db('review').where({ id }).first();
       if (!review) {
-        throw new NotFoundError('Review not found');
+        throw new ApiError('Review not found', 404);
       }
       if (review.userId !== req.user.userId && req.user.role !== 'admin') {
-        throw new ForbiddenError('Access denied');
+        throw new ApiError('Access denied', 403);
       }
       await db('review').where({ id }).delete();
       logger.info(`Review deleted: ${id}`);

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
-import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
+import { ApiError } from '../utils/errors.js';
 import logger from '../config/logger.js';
 
 export const authGuard = async (req, res, next) => {
@@ -8,7 +8,7 @@ export const authGuard = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
-      throw new UnauthorizedError('No token provided');
+      throw new ApiError('No token provided', 401);
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -18,11 +18,11 @@ export const authGuard = async (req, res, next) => {
       .first();
 
     if (!user) {
-      throw new UnauthorizedError('User not found');
+      throw new ApiError('User not found', 404);
     }
 
     if (user.status === 'inactive') {
-      throw new ForbiddenError('Account is inactive');
+      throw new ApiError('Account is inactive', 401);
     }
 
     req.user = {
@@ -35,9 +35,9 @@ export const authGuard = async (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      next(new UnauthorizedError('Invalid token'));
+      next(new ApiError('Invalid token', 401));
     } else if (error.name === 'TokenExpiredError') {
-      next(new UnauthorizedError('Token expired'));
+      next(new ApiError('Token expired', 401));
     } else {
       next(error);
     }
@@ -47,12 +47,12 @@ export const authGuard = async (req, res, next) => {
 export const roleGuard = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return next(new UnauthorizedError('Not authenticated'));
+      return next(new ApiError('Not authenticated', 401));
     }
 
     if (!roles.includes(req.user.role)) {
-      logger.warn(`User ${req.user.email} attempted unauthorized access`);
-      return next(new ForbiddenError('Insufficient permissions'));
+      logger.warn(`User ${req.user.email} surov yubordi`);
+      return next(new ApiError('Access denied', 403));
     }
 
     next();
@@ -63,14 +63,12 @@ export const selfGuard = (req, res, next) => {
   const { id } = req.params;
 
   if (!req.user) {
-    return next(new UnauthorizedError('Not authenticated'));
+    return next(new ApiError('Not authenticated', 401));
   }
 
   if (req.user.userId !== id && req.user.role !== 'admin') {
-    logger.warn(
-      `User ${req.user.email} attempted to access another user's data`
-    );
-    return next(new ForbiddenError('You can only access your own data'));
+    logger.warn(`User ${req.user.email} not allowed`);
+    return next(new ApiError('Forbidden', 403));
   }
 
   next();

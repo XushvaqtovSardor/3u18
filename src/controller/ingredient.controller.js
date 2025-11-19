@@ -1,6 +1,6 @@
 import db from '../config/database.js';
 import { randomUUID } from 'crypto';
-import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { ApiError } from '../utils/errors.js';
 import logger from '../config/logger.js';
 
 export const ingredientController = {
@@ -9,7 +9,7 @@ export const ingredientController = {
       const { name, unit } = req.body;
       const existingIngredient = await db('ingredient').where({ name }).first();
       if (existingIngredient) {
-        throw new ValidationError('Ingredient already exists');
+        throw new ApiError('Ingredient already exists', 400);
       }
       const ingredientId = randomUUID();
       await db('ingredient').insert({
@@ -48,7 +48,7 @@ export const ingredientController = {
       const { id } = req.params;
       const ingredient = await db('ingredient').where({ id }).first();
       if (!ingredient) {
-        throw new NotFoundError('Ingredient not found');
+        throw new ApiError('Ingredient not found', 404);
       }
       res.status(200).json({
         success: true,
@@ -65,7 +65,7 @@ export const ingredientController = {
       const updates = req.body;
       const ingredient = await db('ingredient').where({ id }).first();
       if (!ingredient) {
-        throw new NotFoundError('Ingredient not found');
+        throw new ApiError('Ingredient not found', 404);
       }
       await db('ingredient')
         .where({ id })
@@ -87,7 +87,7 @@ export const ingredientController = {
       const { id } = req.params;
       const ingredient = await db('ingredient').where({ id }).first();
       if (!ingredient) {
-        throw new NotFoundError('Ingredient not found');
+        throw new ApiError('Ingredient not found', 404);
       }
       await db('ingredient').where({ id }).delete();
       logger.info(`Ingredient deleted: ${ingredient.name}`);

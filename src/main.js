@@ -17,7 +17,7 @@ app.use(cookieParser());
 app.use('/', routes);
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Recipe Management API - PostgreSQL' });
+  res.json({ message: 'Working' });
 });
 
 app.use(errorHandler);
@@ -25,5 +25,3 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   logger.info(`Server is running on http://localhost:${PORT}`);
 });
-
-export default app;

@@ -3,11 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { sendOTPEmail } from '../config/email.js';
-import {
-  ValidationError,
-  UnauthorizedError,
-  NotFoundError,
-} from '../utils/errors.js';
+import { ApiError } from '../utils/errors.js';
 import logger from '../config/logger.js';
 
 export const userController = {
@@ -16,7 +12,7 @@ export const userController = {
       const { email, username, password, role = 'user' } = req.body;
       const existingUser = await db('users').where({ email }).first();
       if (existingUser) {
-        throw new ValidationError('Email already registered');
+        throw new ApiError('Email already registered', 400);
       }
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -43,16 +39,14 @@ export const userController = {
         logger.info(`User registered, OTP sent to ${email}`);
         res.status(201).json({
           success: true,
-          message:
-            'verify your email with OTP',
+          message: 'verify your email with OTP',
           email,
         });
       } catch (emailError) {
         logger.error(`Email sending failed: ${emailError.message}`);
         res.status(201).json({
           success: true,
-          message:
-            'Error with sending email',
+          message: 'Error with sending email',
           email,
           otp,
         });
@@ -69,11 +63,11 @@ export const userController = {
         .where({ email, otp, verified: false })
         .first();
       if (!otpRecord) {
-        throw new ValidationError('Invalid OTP');
+        throw new ApiError('Invalid OTP', 400);
       }
       if (new Date() > new Date(otpRecord.expiresAt)) {
         await db('otp').where({ id: otpRecord.id }).delete();
-        throw new ValidationError('OTP expired');
+        throw new ApiError('OTP expired', 400);
       }
       await db('users').where({ email }).update({ status: 'active' });
       await db('otp').where({ id: otpRecord.id }).update({ verified: true });
@@ -92,14 +86,14 @@ export const userController = {
       const { email, password } = req.body;
       const user = await db('users').where({ email }).first();
       if (!user) {
-        throw new UnauthorizedError('Invalid credentials');
+        throw new ApiError('Invalid credentials', 401);
       }
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        throw new UnauthorizedError('Invalid credentials');
+        throw new ApiError('Invalid credentials', 401);
       }
       if (user.status === 'inactive') {
-        throw new UnauthorizedError('Please verify your email first');
+        throw new ApiError('Please verify your email first', 401);
       }
       const accessToken = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
@@ -135,15 +129,15 @@ export const userController = {
     try {
       const { refreshToken } = req.cookies;
       if (!refreshToken) {
-        throw new UnauthorizedError('Refresh token not found');
+        throw new ApiError('Refresh token not found', 401);
       }
       const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
       const user = await db('users').where({ id: decoded.userId }).first();
       if (!user) {
-        throw new NotFoundError('User not found');
+        throw new ApiError('User not found', 404);
       }
       if (user.status === 'inactive') {
-        throw new UnauthorizedError('Account is inactive');
+        throw new ApiError('Account is inactive', 401);
       }
       const newAccessToken = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
@@ -161,7 +155,7 @@ export const userController = {
         error.name === 'JsonWebTokenError' ||
         error.name === 'TokenExpiredError'
       ) {
-        next(new UnauthorizedError('Invalid or expired refresh token'));
+        next(new ApiError('Invalid or expired refresh token', 401));
       } else {
         next(error);
       }
@@ -184,7 +178,7 @@ export const userController = {
         )
         .first();
       if (!user) {
-        throw new NotFoundError('User not found');
+        throw new ApiError('User not found', 404);
       }
       res.status(200).json({
         success: true,
@@ -239,7 +233,7 @@ export const userController = {
         .select('id', 'email', 'username', 'role', 'status', 'createdAt')
         .first();
       if (!user) {
-        throw new NotFoundError('User not found');
+        throw new ApiError('User not found', 404);
       }
       res.status(200).json({
         success: true,
@@ -256,7 +250,7 @@ export const userController = {
       const updates = req.body;
       const user = await db('users').where({ id }).first();
       if (!user) {
-        throw new NotFoundError('User not found');
+        throw new ApiError('User not found', 404);
       }
       await db('users')
         .where({ id })
@@ -289,12 +283,12 @@ export const userController = {
       const { id } = req.params;
       const user = await db('users').where({ id }).first();
       if (!user) {
-        throw new NotFoundError('User not found');
+        throw new ApiError('User not found', 404);
       }
       await db('otp').where({ email: user.email }).delete();
       await db('users').where({ id }).delete();
       logger.info(`User deleted: ${user.email}`);
-      res.status(200).json({  
+      res.status(200).json({
         success: true,
         message: 'User deleted successfully',
       });
